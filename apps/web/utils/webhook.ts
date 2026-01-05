@@ -19,6 +19,13 @@ type WebhookPayload = {
     ExecutedRule,
     "id" | "ruleId" | "reason" | "automated" | "createdAt"
   >;
+  aiDraftResponse?: {
+    content: string | null;
+    subject: string | null;
+    to: string | null;
+    cc: string | null;
+    bcc: string | null;
+  };
 };
 
 export const callWebhook = async (

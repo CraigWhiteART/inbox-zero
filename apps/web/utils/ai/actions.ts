@@ -278,6 +278,21 @@ const call_webhook: ActionFunction<{ url?: string | null }> = async ({
 }) => {
   if (!args.url) return;
 
+  // Check if there's a draft email action in the same executed rule
+  const draftAction = await prisma.executedAction.findFirst({
+    where: {
+      executedRuleId: executedRule.id,
+      type: ActionType.DRAFT_EMAIL,
+    },
+    select: {
+      content: true,
+      subject: true,
+      to: true,
+      cc: true,
+      bcc: true,
+    },
+  });
+
   const payload = {
     email: {
       threadId: email.threadId,
@@ -295,6 +310,15 @@ const call_webhook: ActionFunction<{ url?: string | null }> = async ({
       automated: executedRule.automated,
       createdAt: executedRule.createdAt,
     },
+    ...(draftAction && {
+      aiDraftResponse: {
+        content: draftAction.content,
+        subject: draftAction.subject,
+        to: draftAction.to,
+        cc: draftAction.cc,
+        bcc: draftAction.bcc,
+      },
+    }),
   };
 
   await callWebhook(userId, args.url, payload);
