@@ -16,6 +16,7 @@ import {
 } from "@/utils/ai/choose-rule/ai-choose-args";
 import type { Logger } from "@/utils/logger";
 import type { EmailProvider } from "@/utils/email/types";
+import { callWebhookForContext } from "@/utils/webhook";
 
 const MODULE = "choose-args";
 
@@ -37,6 +38,70 @@ export async function getActionItemsWithAiArgs({
   isTest?: boolean;
 }): Promise<Action[]> {
   const log = logger.with({ module: MODULE });
+  
+  // Check if there are webhook actions that should be called before draft generation
+  const webhookActions = selectedRule.actions.filter(
+    (action) => action.type === ActionType.CALL_WEBHOOK && action.url,
+  );
+  
+  let webhookContext: string | null = null;
+  
+  // Call webhooks before generating draft to get customer context
+  if (webhookActions.length > 0) {
+    for (const webhookAction of webhookActions) {
+      try {
+        log.info("Calling webhook for context", {
+          email: emailAccount.email,
+          threadId: message.threadId,
+          url: webhookAction.url,
+        });
+        
+        const payload = {
+          email: {
+            threadId: message.threadId,
+            messageId: message.id,
+            subject: message.headers.subject,
+            from: message.headers.from,
+            cc: message.headers.cc,
+            bcc: message.headers.bcc,
+            headerMessageId: message.headers["message-id"] || "",
+          },
+          executedRule: {
+            id: "", // Not available yet as rule hasn't been executed
+            ruleId: selectedRule.id,
+            reason: null,
+            automated: null,
+            createdAt: new Date(),
+          },
+        };
+        
+        const response = await callWebhookForContext(
+          emailAccount.userId,
+          webhookAction.url!,
+          payload,
+        );
+        
+        if (response) {
+          webhookContext = response;
+          log.info("Webhook context received", {
+            email: emailAccount.email,
+            threadId: message.threadId,
+            contextLength: response.length,
+          });
+          // Use first webhook response that returns data
+          break;
+        }
+      } catch (error) {
+        log.error("Failed to call webhook for context", {
+          email: emailAccount.email,
+          threadId: message.threadId,
+          error,
+        });
+        // Continue without webhook context if it fails
+      }
+    }
+  }
+  
   // Draft content is handled via its own AI call
   // We provide a lot more context to the AI to draft the content
   const draftEmailActions = selectedRule.actions.filter(
@@ -51,6 +116,7 @@ export async function getActionItemsWithAiArgs({
         email: emailAccount.email,
         threadId: message.threadId,
         isTest,
+        hasWebhookContext: !!webhookContext,
       });
 
       draft = await fetchMessagesAndGenerateDraft(
@@ -59,6 +125,7 @@ export async function getActionItemsWithAiArgs({
         client,
         isTest ? message : undefined,
         logger,
+        webhookContext,
       );
 
       log.info("Draft generated", {
