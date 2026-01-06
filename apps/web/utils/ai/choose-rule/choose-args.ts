@@ -67,7 +67,7 @@ export async function getActionItemsWithAiArgs({
             headerMessageId: message.headers["message-id"] || "",
           },
           executedRule: {
-            id: "", // Not available yet as rule hasn't been executed
+            id: "PENDING", // Not available yet as rule hasn't been executed
             ruleId: selectedRule.id,
             reason: null,
             automated: null,
