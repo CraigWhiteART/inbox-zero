@@ -5,6 +5,9 @@ import type { ExecutedRule } from "@/generated/prisma/client";
 
 const logger = createScopedLogger("webhook");
 
+// Maximum size of webhook response to use as context (10KB)
+const MAX_WEBHOOK_CONTEXT_SIZE = 10000;
+
 type WebhookPayload = {
   email: {
     threadId: string;
@@ -100,8 +103,8 @@ export const callWebhookForContext = async (
     const responseText = await response.text();
     logger.info("Webhook context fetched", { url, responseLength: responseText.length });
     
-    // Limit response size to prevent excessive context (max 10KB)
-    return responseText.substring(0, 10000);
+    // Limit response size to prevent excessive context
+    return responseText.substring(0, MAX_WEBHOOK_CONTEXT_SIZE);
   } catch (error) {
     logger.error("Webhook call for context failed", { error, url });
     return null;

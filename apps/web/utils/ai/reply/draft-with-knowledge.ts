@@ -155,7 +155,12 @@ ${mcpContext}
 ${webhookContext}
 </webhook_context>
 
-IMPORTANT: Use this customer information to personalize your response appropriately. This data provides detailed context about the sender.
+Use this customer information to personalize your response when relevant. For example:
+- Reference their account status, purchase history, or support tickets if mentioned
+- Acknowledge their customer tier or relationship length if provided
+- Address specific concerns based on their history
+- Use appropriate tone based on customer relationship data
+Only use information that directly helps address their current email.
 `
     : "";
 
