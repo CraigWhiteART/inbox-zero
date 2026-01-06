@@ -5,6 +5,9 @@ import type { ExecutedRule } from "@/generated/prisma/client";
 
 const logger = createScopedLogger("webhook");
 
+// Maximum size of webhook response to use as context (10KB)
+const MAX_WEBHOOK_CONTEXT_SIZE = 10000;
+
 type WebhookPayload = {
   email: {
     threadId: string;
@@ -52,5 +55,58 @@ export const callWebhook = async (
     logger.error("Webhook call failed", { error, url });
     // Don't throw the error since we want to continue execution
     logger.info("Continuing after webhook timeout/error");
+  }
+};
+
+/**
+ * Call webhook and return the response content for use as context in AI draft generation
+ */
+export const callWebhookForContext = async (
+  userId: string,
+  url: string,
+  payload: WebhookPayload,
+): Promise<string | null> => {
+  if (!url) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { webhookSecret: true },
+  });
+  if (!user) return null;
+
+  try {
+    const response = await Promise.race<Response | null>([
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Webhook-Secret": user.webhookSecret || "",
+        },
+        body: JSON.stringify(payload),
+      }),
+      sleep(5000).then(() => null), // 5 second timeout for context fetch
+    ]);
+
+    if (!response) {
+      logger.warn("Webhook timeout for context", { url });
+      return null;
+    }
+
+    if (!response.ok) {
+      logger.warn("Webhook returned non-OK status for context", {
+        url,
+        status: response.status,
+      });
+      return null;
+    }
+
+    const responseText = await response.text();
+    logger.info("Webhook context fetched", { url, responseLength: responseText.length });
+    
+    // Limit response size to prevent excessive context
+    return responseText.substring(0, MAX_WEBHOOK_CONTEXT_SIZE);
+  } catch (error) {
+    logger.error("Webhook call for context failed", { error, url });
+    return null;
   }
 };

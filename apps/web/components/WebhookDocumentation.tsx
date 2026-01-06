@@ -137,6 +137,12 @@ export function WebhookPayloadDocumentation() {
           </div>
         </div>
 
+        <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-md">
+          <div className="text-sm text-green-600 dark:text-green-400">
+            <strong>AI Draft Context:</strong> When a rule has both "Draft Email" and "Call Webhook" actions, the webhook is called <strong>before</strong> the draft is generated. Return customer information in your webhook response (plain text or JSON) to provide context for the AI to personalize the draft.
+          </div>
+        </div>
+
         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md">
           <div className="text-sm text-blue-600 dark:text-blue-400">
             <strong>Authentication:</strong> Each request includes an{" "}

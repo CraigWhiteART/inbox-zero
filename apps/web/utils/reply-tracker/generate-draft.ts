@@ -32,6 +32,7 @@ export async function fetchMessagesAndGenerateDraft(
   client: EmailProvider,
   testMessage: ParsedMessage | undefined,
   logger: Logger,
+  webhookContext?: string | null,
 ): Promise<string> {
   const { threadMessages, previousConversationMessages } = testMessage
     ? { threadMessages: [testMessage], previousConversationMessages: null }
@@ -43,6 +44,7 @@ export async function fetchMessagesAndGenerateDraft(
     previousConversationMessages,
     client,
     logger,
+    webhookContext,
   );
 
   if (typeof result !== "string") {
@@ -106,6 +108,7 @@ async function generateDraftContent(
   previousConversationMessages: ParsedMessage[] | null,
   emailProvider: EmailProvider,
   logger: Logger,
+  webhookContext?: string | null,
 ) {
   const lastMessage = threadMessages.at(-1);
 
@@ -219,6 +222,7 @@ async function generateDraftContent(
     writingStyle,
     mcpContext: mcpResult?.response || null,
     meetingContext,
+    webhookContext,
   });
 
   if (typeof text === "string") {
