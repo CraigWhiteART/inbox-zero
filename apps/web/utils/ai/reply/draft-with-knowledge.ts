@@ -39,6 +39,7 @@ const getUserPrompt = ({
   writingStyle,
   mcpContext,
   meetingContext,
+  webhookContext,
 }: {
   messages: (EmailForLLM & { to: string })[];
   emailAccount: EmailAccountWithAI;
@@ -49,6 +50,7 @@ const getUserPrompt = ({
   writingStyle: string | null;
   mcpContext: string | null;
   meetingContext: string | null;
+  webhookContext?: string | null;
 }) => {
   const userAbout = emailAccount.about
     ? `Context about the user:
@@ -146,6 +148,17 @@ ${mcpContext}
 `
     : "";
 
+  const webhookContextPrompt = webhookContext
+    ? `Customer information from webhook (detailed information about the sender that can help personalize the response):
+
+<webhook_context>
+${webhookContext}
+</webhook_context>
+
+IMPORTANT: Use this customer information to personalize your response appropriately. This data provides detailed context about the sender.
+`
+    : "";
+
   const upcomingMeetingsContext = meetingContext || "";
 
   return `${userAbout}
@@ -156,6 +169,7 @@ ${writingStylePrompt}
 ${calendarContext}
 ${bookingLinkContext}
 ${mcpToolsContext}
+${webhookContextPrompt}
 ${upcomingMeetingsContext}
 
 Here is the context of the email thread (from oldest to newest):
@@ -184,6 +198,7 @@ export async function aiDraftWithKnowledge({
   writingStyle,
   mcpContext,
   meetingContext,
+  webhookContext,
 }: {
   messages: (EmailForLLM & { to: string })[];
   emailAccount: EmailAccountWithAI;
@@ -194,12 +209,14 @@ export async function aiDraftWithKnowledge({
   writingStyle: string | null;
   mcpContext: string | null;
   meetingContext: string | null;
+  webhookContext?: string | null;
 }) {
   try {
     logger.info("Drafting email with knowledge base", {
       messageCount: messages.length,
       hasKnowledge: !!knowledgeBaseContent,
       hasHistory: !!emailHistorySummary,
+      hasWebhookContext: !!webhookContext,
       calendarAvailability: calendarAvailability
         ? {
             noAvailability: calendarAvailability.noAvailability,
@@ -219,6 +236,7 @@ export async function aiDraftWithKnowledge({
       writingStyle,
       mcpContext,
       meetingContext,
+      webhookContext,
     });
 
     const modelOptions = getModel(emailAccount.user);

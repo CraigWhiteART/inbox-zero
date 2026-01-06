@@ -59,13 +59,6 @@ export function WebhookPayloadDocumentation() {
       automated: true,
       createdAt: "2024-01-15T10:30:00.000Z",
     },
-    aiDraftResponse: {
-      content: "Thank you for your email. I'll review the contract and get back to you soon.",
-      subject: "Re: Important Contract Document",
-      to: "client@company.com",
-      cc: null,
-      bcc: null,
-    },
   };
 
   const payloadJson = JSON.stringify(payloadExample, null, 2);
@@ -144,24 +137,9 @@ export function WebhookPayloadDocumentation() {
           </div>
         </div>
 
-        <div>
-          <h5 className="font-medium mb-2">AI Draft Response (Optional)</h5>
-          <div className="space-y-1 text-sm text-muted-foreground mb-2">
-            When a rule includes both a "Draft Email" and "Call Webhook" action, the webhook payload will include the AI-generated draft response:
-          </div>
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <div>
-              <code>content</code> - The AI-generated email reply content
-            </div>
-            <div>
-              <code>subject</code> - Draft email subject
-            </div>
-            <div>
-              <code>to</code> - Draft recipient address
-            </div>
-            <div>
-              <code>cc/bcc</code> - Optional CC/BCC recipients
-            </div>
+        <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-md">
+          <div className="text-sm text-green-600 dark:text-green-400">
+            <strong>AI Draft Context:</strong> When a rule has both "Draft Email" and "Call Webhook" actions, the webhook is called <strong>before</strong> the draft is generated. Return customer information in your webhook response (plain text or JSON) to provide context for the AI to personalize the draft.
           </div>
         </div>
 
