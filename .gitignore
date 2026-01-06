@@ -77,3 +77,4 @@ docker-compose.override.yml
 logs
 
 coverage
+/.vs
